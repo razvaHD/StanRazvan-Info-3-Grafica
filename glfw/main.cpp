@@ -1,8 +1,14 @@
 #include <glad/glad.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+#include <objects/shader.h>
+#include <stbimages/stb_image.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <iostream>
+#include <cmath>
 using namespace std;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -14,15 +20,71 @@ void processInput(GLFWwindow *window)
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 }
- float triangle1[] = {                         //triunghi
-    -1.0f, -1.0f, 0.0f,
-    0.0f, -1.0f, 0.0f,
-    -0.5f, 0.0f, 0.0f,
-    };
+ float triangle1[] = {
+// positions // colors
+    0.5f, 0.5f, 0.0f, 1.0f, 1.0f, // bottom right
+    -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, // bottom left
+    -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, // top
+    -0.5f, 0.5f, 0.5f, 0.0f, 1.0f // top
+};
  float triangle2[] = {                         //triunghi
     0.0f, -1.0f, 0.0f,
     1.0f, -1.0f, 0.0f,
     0.5f, 0.0f, 0.0f
+    };
+float vertices[] = {
+    -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
+    0.5f, -0.5f, -0.5f, 1.0f, 0.0f,
+    0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
+    0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
+    -0.5f, 0.5f, -0.5f, 0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
+    -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
+    0.5f, -0.5f, 0.5f, 1.0f, 0.0f,
+    0.5f, 0.5f, 0.5f, 1.0f, 1.0f,
+    0.5f, 0.5f, 0.5f, 1.0f, 1.0f,
+    -0.5f, 0.5f, 0.5f, 0.0f, 1.0f,
+    -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
+    -0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
+    -0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+    -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
+    -0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
+    0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
+    0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
+    0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+    0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+    0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
+    0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+    0.5f, -0.5f, -0.5f, 1.0f, 1.0f,
+    0.5f, -0.5f, 0.5f, 1.0f, 0.0f,
+    0.5f, -0.5f, 0.5f, 1.0f, 0.0f,
+    -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+    -0.5f, 0.5f, -0.5f, 0.0f, 1.0f,
+    0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
+    0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
+    0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
+    -0.5f, 0.5f, 0.5f, 0.0f, 0.0f,
+    -0.5f, 0.5f, -0.5f, 0.0f, 1.0f
+};
+glm::vec3 cubePositions[] = {
+    glm::vec3( 0.0f, 0.0f, 0.0f),
+    glm::vec3( 2.0f, 5.0f, -15.0f),
+    glm::vec3(-1.5f, -2.2f, -2.5f),
+    glm::vec3(-3.8f, -2.0f, -12.3f),
+    glm::vec3( 2.4f, -0.4f, -3.5f),
+    glm::vec3(-1.7f, 3.0f, -7.5f),
+    glm::vec3( 1.3f, -2.0f, -2.5f),
+    glm::vec3( 1.5f, 2.0f, -2.5f),
+    glm::vec3( 1.5f, 0.2f, -1.5f),
+    glm::vec3(-1.3f, 1.0f, -1.5f)
+};
+unsigned int indices[] = {  
+    0, 1, 3, // first triangle
+    1, 2, 3  // second triangle
     };
 // float vertices[] = {                                //Pătrat
 //     0.5f, 0.5f, 0.0f, // top right
@@ -35,25 +97,8 @@ void processInput(GLFWwindow *window)
 //     0, 1, 3, // first triangle
 //     1, 2, 3 // second triangle
 // };
-const char *vertexShaderSource = "#version 330 core\n"
-    "layout (location = 0) in vec3 aPos;\n"
-    "void main()\n"
-    "{\n"
-    " gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-    "}\0";
-const char *fragmentShaderSourceOrange = "#version 330 core\n"
-    "out vec4 FragColor;\n"
-    "void main()\n"
-    "{\n"
-    "    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-    "}\0";
-
-const char *fragmentShaderSourceYellow = "#version 330 core\n"
-    "out vec4 FragColor;\n"
-    "void main()\n"
-    "{\n"
-    "    FragColor = vec4(1.0f, 1.0f, 0.0f, 1.0f);\n"
-    "}\0";
+const unsigned int WIDTH=1080;
+const unsigned int HEIGHT=720;
 
 int main(void)
 {
@@ -62,7 +107,7 @@ int main(void)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     
-    GLFWwindow* window = glfwCreateWindow(1080, 720, "Hello World", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Hello World", NULL, NULL);
     if (window == NULL)
     {
         cout << "Failed to create GLFW window" << std::endl;
@@ -76,127 +121,69 @@ int main(void)
         cout << "Failed to initialize GLAD" << endl;
         return -1;
     }
-    glViewport(0, 0, 1080, 720);
+    glViewport(0, 0, WIDTH, HEIGHT);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-        // input
-        processInput(window);
+    
+    Shader ourShader("shaders/shader.vs", "shaders/shader.fs");
 
-        // rendering commands here
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);               //Alege culoarea ecranului
-    glClear(GL_COLOR_BUFFER_BIT);                       //Setează culoarea ecranului
-    unsigned int vertexShader;
-    vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-    glCompileShader(vertexShader);
-    int success;
-    char infoLog[512];
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    if(!success)                                // Verifică erorile de compilare ale shader-ului vertex
+    unsigned int VAO, VBO, EBO;                           //Creează un Vortex Array Object
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO); 
+    glGenBuffers(1, &EBO); 
+    glBindVertexArray(VAO); 
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    // 2. copy our vertices array in a buffer for OpenGL to use
+
+    // 3. then set our vertex attributes pointers
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float),(void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    unsigned int texture1, texture2;
+    glGenTextures(1, &texture1);
+    glBindTexture(GL_TEXTURE_2D, texture1);
+    // set the texture wrapping/filtering options (on currently bound texture)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // load and generate the texture
+    stbi_set_flip_vertically_on_load(true);
+    int width, height, nrChannels;
+    unsigned char *data = stbi_load("assets/images/box.png", &width, &height,&nrChannels, 0);
+    if (data)
     {
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" <<
-        infoLog << std::endl;
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
     }
-    unsigned int fragmentShaderOrange = glCreateShader(GL_FRAGMENT_SHADER); // the first fragment shader that outputs the color orange
-    unsigned int fragmentShaderYellow = glCreateShader(GL_FRAGMENT_SHADER); // the second fragment shader that outputs the color yellow
-    unsigned int shaderProgramOrange = glCreateProgram();// Creează un shader program(leaga shade-urile una dupa alta)
-    unsigned int shaderProgramYellow = glCreateProgram(); // the second shader program
-    fragmentShaderOrange = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShaderOrange, 1, &fragmentShaderSourceOrange, NULL);
-    glCompileShader(fragmentShaderOrange);
-    glGetShaderiv(fragmentShaderOrange, GL_COMPILE_STATUS, &success);
-    if(!success)                                // Verifică erorile de compilare ale shader-ului fragment
+    else
     {
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" <<
-        infoLog << std::endl;
-    }
-    glShaderSource(fragmentShaderYellow, 1, &fragmentShaderSourceYellow, NULL);
-    glCompileShader(fragmentShaderYellow);
-    if(!success)                                // Verifică erorile de compilare ale shader-ului fragment
-    {
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" <<
-        infoLog << std::endl;
-    }
-    glAttachShader(shaderProgramOrange, vertexShader);    // Atașează shader-ul vertex
-    glAttachShader(shaderProgramOrange, fragmentShaderOrange);  // Atașează shader-ul fragment
-    glLinkProgram(shaderProgramOrange);                   // Leagă programul
-    glGetProgramiv(shaderProgramOrange, GL_LINK_STATUS, &success);
-    if(!success)                                    // Verifică erorile programului
-    {
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" <<
-        infoLog << std::endl;
+        std::cout << "Failed to load texture" << std::endl;
     }
     
-    glAttachShader(shaderProgramOrange, vertexShader);
-    glAttachShader(shaderProgramOrange, fragmentShaderOrange);
-    glLinkProgram(shaderProgramOrange);
-    // then link the second program object using a different fragment shader (but same vertex shader)
-    // this is perfectly allowed since the inputs and outputs of both the vertex and fragment shaders are equally matched.
-    glAttachShader(shaderProgramYellow, vertexShader);
-    glAttachShader(shaderProgramYellow, fragmentShaderYellow);
-    glLinkProgram(shaderProgramYellow);
-    glDeleteShader(vertexShader);                   // Șterge shader-ul vertex
-    glDeleteShader(fragmentShaderOrange);                 // Șterge shader-ul fragment
-    glDeleteShader(fragmentShaderYellow);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float),(void*)0);    //spune care vârf să configurăm, dimensiunea(3 deoarece vârful este vec3), tipul de dată(în cazul ăsta float), dacă să fie normalizat, spațiul între atribute consecutive, offset
-    glEnableVertexAttribArray(0);
-    unsigned int VAO;                           //Creează un Vortex Array Object
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-
-
-    unsigned int VBOs[2], VAOs[2];                                   //Crează un vertex buffer
-    glGenVertexArrays(2, VAOs); // we can also generate multiple VAOs or buffers at the same time
-    glGenBuffers(2, VBOs);
-    // first triangle setup
-    // --------------------
-    glBindVertexArray(VAOs[0]);     
-    glBindBuffer(GL_ARRAY_BUFFER, VBOs[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(triangle1), triangle1, GL_STATIC_DRAW);
-    // 2. copy our vertices array in a buffer for OpenGL to use
-    glBindBuffer(GL_ARRAY_BUFFER, VBOs[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(triangle1), triangle1, GL_STATIC_DRAW);
-    // 3. then set our vertex attributes pointers
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float),(void*)0);
-    glEnableVertexAttribArray(0);
-    // --------------------
-    glBindVertexArray(VAOs[1]);     
-    glBindBuffer(GL_ARRAY_BUFFER, VBOs[1]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(triangle2), triangle2, GL_STATIC_DRAW);
-    // 2. copy our vertices array in a buffer for OpenGL to use
-    glBindBuffer(GL_ARRAY_BUFFER, VBOs[1]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(triangle2), triangle2, GL_STATIC_DRAW);
-    // 3. then set our vertex attributes pointers
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float),(void*)0);
-    glEnableVertexAttribArray(0);
-        
-        // unsigned int EBO;                       //Creează un element buffer object, care creează un pătrat din 2 triunghiuri și doar 2 vârfuri
-        // glGenBuffers(1, &EBO);
-        // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices,GL_STATIC_DRAW);
-        // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);    //Cere modul, câte vârfuri sunt, tipul și offset
-        // // ..:: Initialization code :: ..
-        // // 1. bind Vertex Array Object
-        // glBindVertexArray(VAO);
-        // // 2. copy our vertices array in a vertex buffer for OpenGL to use
-        // glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        // glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-        // // 3. copy our index array in a element buffer for OpenGL to use
-        // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices,
-        // GL_STATIC_DRAW);
-        // // 4. then set the vertex attributes pointers
-        // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float),
-        // (void*)0);
-        // glEnableVertexAttribArray(0);
-        // glUseProgram(shaderProgram);
-        // glBindVertexArray(VAO);
-        // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        // glBindVertexArray(0);
+    stbi_image_free(data);
+    glGenTextures(1, &texture2);
+    glBindTexture(GL_TEXTURE_2D, texture2);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    data = stbi_load("assets/images/emoji.png", &width, &height,&nrChannels, 0);
+    if (data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    glEnable(GL_DEPTH_TEST);
+    stbi_image_free(data);
+    ourShader.use();
+    glUniform1i(glGetUniformLocation(ourShader.ID, "texture1"), 0);
+    ourShader.setInt("texture2", 1);
 
     
     while (!glfwWindowShouldClose(window))
@@ -204,6 +191,7 @@ int main(void)
         // input
         // -----
         processInput(window);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         // render
         // ------
@@ -211,17 +199,45 @@ int main(void)
         glClear(GL_COLOR_BUFFER_BIT);                           //Alege culoarea ecranului
 
         // draw our first triangle
-        glUseProgram(shaderProgramOrange);
-        glBindVertexArray(VAOs[0]);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        // then we draw the second triangle using the data from the second VAO
-        glUseProgram(shaderProgramYellow);
-        glBindVertexArray(VAOs[1]);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        // glBindVertexArray(0); // no need to unbind it every time 
- 
-        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-        // -------------------------------------------------------------------------------
+// update the uniform color
+        // now render the triangle  
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture1);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, texture2);
+        
+        ourShader.use();
+
+        glm::mat4 model         = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
+        glm::mat4 view          = glm::mat4(1.0f);
+        glm::mat4 projection    = glm::mat4(1.0f);
+        model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f),glm::vec3(0.5f, 1.0f, 0.0f));
+        view  = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+        projection = glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
+        // retrieve the matrix uniform locations
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        unsigned int modelLoc = glGetUniformLocation(ourShader.ID, "model");
+        unsigned int viewLoc  = glGetUniformLocation(ourShader.ID, "view");
+        // pass them to the shaders (3 different ways)
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &view[0][0]);
+        // note: currently we set the projection matrix each frame, but since the projection matrix rarely changes it's often best practice to set it outside the main loop only once.
+        ourShader.setMat4("projection", projection);
+
+        glBindVertexArray(VAO);
+        glBindVertexArray(VAO);
+        for(unsigned int i = 0; i < 10; i++)
+        {
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, cubePositions[i]);
+            float angle = 20.0f * i;
+            model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f),
+            glm::vec3(1.0f, 0.3f, 0.5f));
+            ourShader.setMat4("model", model);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        // swap buffers and poll IO events
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
