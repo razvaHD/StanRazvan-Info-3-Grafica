@@ -6,6 +6,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <cstdlib>
 
 #include <iostream>
 #include <cmath>
@@ -19,7 +20,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-glm::vec3 cameray = glm::vec3(-1.0f, 0.0f, 0.0f);
+glm::vec3 cameray = glm::vec3(1.0f, 0.0f, 0.0f);
 float deltaTime = 0.0f; // Time between current frame and last frame
 float lastFrame = 0.0f; // Time of last frame
 bool firstMouse = true;
@@ -28,11 +29,22 @@ float pitch =  0.0f;
 float lastX =  800.0f / 2.0;
 float lastY =  600.0 / 2.0;
 float fov   =  45.0f;
+float speed=0;
+float acceleration=0;
+float gravity=0.1;
+float terminalVel=1;
+int frame = 0;
+float timeframes=0;
+float timebaseframes = 0;
+float fps = 0.0f;
 void processInput(GLFWwindow *window)
 {
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
-    const float cameraSpeed = 2.5*deltaTime; // adjust accordingly
+    float cameraSpeed = 20*deltaTime; // adjust accordingly
+    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+        cameraSpeed = 40*deltaTime;
+
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         cameraPos += cameraSpeed * cameraFront;
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -42,10 +54,11 @@ void processInput(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-        cameraPos += glm::normalize(glm::cross(cameraFront, cameray)) * cameraSpeed;
+        cameraPos += glm::normalize(cameraUp) * cameraSpeed;
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-        cameraPos += glm::normalize(glm::cross(cameraFront, -cameray)) * cameraSpeed;
+        cameraPos -= glm::normalize(cameraUp) * cameraSpeed;
 }
+
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     fov -= (float)yoffset;
@@ -131,18 +144,18 @@ float vertices[] = {
     -0.5f, 0.5f, 0.5f, 0.0f, 0.0f,
     -0.5f, 0.5f, -0.5f, 0.0f, 1.0f
 };
-glm::vec3 cubePositions[] = {
-    glm::vec3( 0.0f, 0.0f, 0.0f),
-    glm::vec3( 2.0f, 5.0f, -15.0f),
-    glm::vec3(-1.5f, -2.2f, -2.5f),
-    glm::vec3(-3.8f, -2.0f, -12.3f),
-    glm::vec3( 2.4f, -0.4f, -3.5f),
-    glm::vec3(-1.7f, 3.0f, -7.5f),
-    glm::vec3( 1.3f, -2.0f, -2.5f),
-    glm::vec3( 1.5f, 2.0f, -2.5f),
-    glm::vec3( 1.5f, 0.2f, -1.5f),
-    glm::vec3(-1.3f, 1.0f, -1.5f)
-};
+// glm::vec3 cubePositions[] = {
+//     glm::vec3( 0.0f, 0.0f, 0.0f),
+//     glm::vec3( 1.0f, 0.0f, 0.0f),
+//     glm::vec3( 2.0f, 0.0f, 0.0f),
+//     glm::vec3( 3.0f, 0.0f, 0.0f),
+//     glm::vec3( 4.0f, 0.0f, 0.0f),
+//     glm::vec3( 5.0f, 0.0f, 0.0f),
+// };
+
+glm::vec3 cubePositions[10][3][11];
+
+
 unsigned int indices[] = {  
     0, 1, 3, // first triangle
     1, 2, 3  // second triangle
@@ -205,9 +218,6 @@ int main(void)
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-    // 2. copy our vertices array in a buffer for OpenGL to use
-
-    // 3. then set our vertex attributes pointers
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float),(void*)0);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
@@ -216,7 +226,6 @@ int main(void)
     unsigned int texture1, texture2;
     glGenTextures(1, &texture1);
     glBindTexture(GL_TEXTURE_2D, texture1);
-    // set the texture wrapping/filtering options (on currently bound texture)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -253,6 +262,24 @@ int main(void)
     ourShader.use();
     glUniform1i(glGetUniformLocation(ourShader.ID, "texture1"), 0);
     ourShader.setInt("texture2", 1);
+    int i=0;
+    unsigned int sizes[]={sizeof(cubePositions) / sizeof(cubePositions[0]),sizeof(cubePositions[0]) / sizeof(cubePositions[0][0]),sizeof(cubePositions[0][0]) / sizeof(cubePositions[0][0][0])};
+    for(i=0;i<sizes[0];++i)
+    {   int j;
+        for(j=0;j<sizes[1];++j)
+        {
+            int k;
+            for(k=0;k<sizes[2];++k)
+            {
+                if(k>=(sizes[2]-(sizes[2]/10)))
+                    cubePositions[i][j][k]=glm::vec3((float)i, -3.0f, (float)(rand() % (k-3)));
+                else
+                    cubePositions[i][j][k]=glm::vec3((float)i, (float)j-6, (float)k);
+            }
+        }
+    }
+    timeframes=glfwGetTime();
+    timebaseframes=glfwGetTime();
 
     
     while (!glfwWindowShouldClose(window))
@@ -263,6 +290,15 @@ int main(void)
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
         processInput(window);
+        frame++;
+        timeframes = glfwGetTime();
+
+        if (timeframes - timebaseframes > 1) {
+            fps = frame * 1000.0f / (timeframes - timebaseframes);
+            timebaseframes = timeframes;
+            std::cout<<frame<<endl;
+            frame = 0;
+        }
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         // render
@@ -295,15 +331,22 @@ int main(void)
 
         glBindVertexArray(VAO);
         glBindVertexArray(VAO);
-        for(unsigned int i = 0; i < 10; i++)
-        {
-            glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, cubePositions[i]);
-            float angle = 20.0f * i;
-            model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f),
-            glm::vec3(1.0f, 0.3f, 0.5f));
-            ourShader.setMat4("model", model);
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+        unsigned int i;
+        for(i=0;i<sizes[0];++i)
+        {   int j;
+            for(j=0;j<sizes[1];++j)
+            {
+                int k;
+                for(k=0;k<sizes[2];++k)
+                {
+                    glm::mat4 model = glm::mat4(1.0f);
+                    model = glm::translate(model, cubePositions[i][j][k]);
+                    float angle = 0;//20.0f * i;
+                    model = glm::rotate(model, glm::radians(0.0f),glm::vec3(1.0f, 0.3f, 0.5f));
+                    ourShader.setMat4("model", model);
+                    glDrawArrays(GL_TRIANGLES, 0, 36);
+                }
+            }
         }
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         // swap buffers and poll IO events
