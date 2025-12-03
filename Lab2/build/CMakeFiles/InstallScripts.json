@@ -1,0 +1,11 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/personal/documente/Facultate/Grafica/StanR\u0103zvan-Info-3-Grafic\u0103/StanRazvan-Info-3-Grafica/glfw/build/cmake_install.cmake",
+		"/home/personal/documente/Facultate/Grafica/StanR\u0103zvan-Info-3-Grafic\u0103/StanRazvan-Info-3-Grafica/glfw/build/src/cmake_install.cmake",
+		"/home/personal/documente/Facultate/Grafica/StanR\u0103zvan-Info-3-Grafic\u0103/StanRazvan-Info-3-Grafica/glfw/build/examples/cmake_install.cmake",
+		"/home/personal/documente/Facultate/Grafica/StanR\u0103zvan-Info-3-Grafic\u0103/StanRazvan-Info-3-Grafica/glfw/build/tests/cmake_install.cmake",
+		"/home/personal/documente/Facultate/Grafica/StanR\u0103zvan-Info-3-Grafic\u0103/StanRazvan-Info-3-Grafica/glfw/build/docs/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
