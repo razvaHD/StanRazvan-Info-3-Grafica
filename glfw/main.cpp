@@ -5,8 +5,6 @@
 #include <objects/camera.h>
 #include <objects/engine.cpp>
 #include <objects/gameobjects.cpp>
-#include <ft2build.h>
-#include FT_FREETYPE_H
 
 #include <iostream>
 #include <cmath>
@@ -45,7 +43,7 @@ float specularStrength = 0.5;
 //int sizes[]={sizeof(blocks)/sizeof(blocks[0]),sizeof(blocks[0])/sizeof(blocks[0][0]),sizeof(blocks[0][0])/sizeof(blocks[0][0][0])};
 
 int sizes[]={100,4, 100};
-Camera camera(glm::vec3(sizes[0]/2-0.5, 6.0f, sizes[2]/2-0.5));
+Camera camera(glm::vec3(-0.5, 6.0f, -0.5));
 // vector<glm::vec3> blocks=vector<glm::vec3>(sizes[0]*sizes[1]*sizes[2]);
 World world=World();
 
@@ -157,8 +155,6 @@ int main()
         engine.render(scrsize);
             
         engine.rendercubes(world, &camera, deltaTime);
-        
-
         glBindVertexArray(engine.lightCubeVAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
@@ -214,7 +210,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
     {
-        world.delBlock(floor(camera.Position.x), floor(camera.Position.y-2.2f), floor(camera.Position.z));
+        world.delBlock(floor(camera.Position.x), floor(camera.Position.y-2.2f), floor(camera.Position.z-1));
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
     {

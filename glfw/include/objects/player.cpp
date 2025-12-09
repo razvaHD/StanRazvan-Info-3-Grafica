@@ -8,7 +8,7 @@ class Player
         float applygravity(float deltaTime)
         {
             if((gravity*deltaTime)+speed>terminalvelocity)
-                return 0;
+                return speed;
             return speed+=gravity*deltaTime;
         }
         void Jump(float deltaTime)

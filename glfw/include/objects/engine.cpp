@@ -16,13 +16,20 @@
 #include <vector>
 #include <objects/gameobjects.cpp>
 #include <objects/player.cpp>
+#include <ft2build.h>
+#include FT_FREETYPE_H
 
 unsigned int loadTexture(char const * path);
 
 struct Cube{
     glm::vec3 position;
 };
-if (FT_Init_FreeType(&ft))
+struct Character {
+unsigned int TextureID; // ID handle of the glyph texture
+glm::ivec2 Size; // Size of glyph
+glm::ivec2 Bearing; // Offset from baseline to left/top of glyph
+unsigned int Advance; // Offset to advance to next glyph
+};
 float offset=0.5;
 float cubevertices[] = {
                 // positions                              // normals           // texture coords
@@ -75,23 +82,31 @@ class Engine
     public:
         Shader lightingShader;
         Shader lightCubeShader;
-        unsigned int VBO, cubeVAO, lightCubeVAO, texture1, map;
+        Shader CharacterShader;
+        unsigned int VBO, cubeVAO, lightCubeVAO, texture1, map, characterVAO, characterVBO;
         glm::vec3 lightPos;
         int width, height;
         Player player=Player();
+        FT_Library ft;
+        FT_Face face;
+        std::map<char, Character> Characters;
+        glm::mat4 projection = glm::ortho(0.0f, 1920.0f, 0.0f, 1080.0f);
 
         Engine()
         {
             return;
         }
 
-        Engine(GLFWwindow* window)
+        Engine(GLFWwindow* window): 
+            lightingShader("shaders/lightshader.vs", "shaders/lightshader.fs"),
+            lightCubeShader("shaders/lightcubeshader.vs", "shaders/lightcubeshader.fs"),
+            CharacterShader("shaders/character.vs", "shaders/character.fs")
         {
             glEnable(GL_DEPTH_TEST);
             glCullFace(GL_FRONT);
             glEnable(GL_DEPTH_TEST);
 
-            
+            characterInit();
             
             lightPos=glm::vec3(1.2f, 1.0f, 2.0f);
             
@@ -124,13 +139,20 @@ class Engine
             glBindBuffer(GL_ARRAY_BUFFER, VBO);
             glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
             glEnableVertexAttribArray(0);
-            lightingShader=Shader("shaders/lightshader.vs", "shaders/lightshader.fs");
-            lightCubeShader=Shader("shaders/lightcubeshader.vs", "shaders/lightcubeshader.fs");
             texture1 = loadTexture("assets/images/container2edt.png");
             map = loadTexture("assets/images/container2_specular.png");
             lightingShader.use();
             lightingShader.setInt("material.diffuse", 0);
             lightingShader.setInt("material.specular", 1);
+            glGenVertexArrays(1, &characterVAO);
+            glGenBuffers(1, &characterVBO);
+            glBindVertexArray(characterVAO);
+            glBindBuffer(GL_ARRAY_BUFFER, characterVBO);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6*4, NULL, GL_DYNAMIC_DRAW);
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glBindVertexArray(0);
         }
         void render(int* scr_size)
         {
@@ -141,7 +163,6 @@ class Engine
             
             lightingShader.use();
             lightPos=(glm::vec3(50.0f, 20.0f, 50.0f));
-
         }
         void rendercubes(World world, Camera* camera, float deltaTime)
         {   
@@ -185,6 +206,50 @@ class Engine
             glBindVertexArray(lightCubeVAO);
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
+        void RenderText(Shader &shader, std::string text, float x, float y, float scale, glm::vec3 color)
+        {
+            // activate corresponding render state	
+            shader.use();
+            glUniform3f(glGetUniformLocation(shader.ID, "textColor"), color.x, color.y, color.z);
+            glActiveTexture(GL_TEXTURE0);
+            glBindVertexArray(characterVAO);
+
+            // iterate through all characters
+            std::string::const_iterator c;
+            for (c = text.begin(); c != text.end(); c++) 
+            {
+                Character ch = Characters[*c];
+
+                float xpos = x + ch.Bearing.x * scale;
+                float ypos = y - (ch.Size.y - ch.Bearing.y) * scale;
+
+                float w = ch.Size.x * scale;
+                float h = ch.Size.y * scale;
+                // update VBO for each character
+                float vert[6][4] = {
+                    { xpos,     ypos + h,   0.0f, 0.0f },            
+                    { xpos,     ypos,       0.0f, 1.0f },
+                    { xpos + w, ypos,       1.0f, 1.0f },
+
+                    { xpos,     ypos + h,   0.0f, 0.0f },
+                    { xpos + w, ypos,       1.0f, 1.0f },
+                    { xpos + w, ypos + h,   1.0f, 0.0f }           
+                };
+                // render glyph texture over quad
+                glBindTexture(GL_TEXTURE_2D, ch.TextureID);
+                // update content of VBO memory
+                glBindBuffer(GL_ARRAY_BUFFER, characterVBO);
+                glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vert), vert); // be sure to use glBufferSubData and not glBufferData
+
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+                // render quad
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+                // now advance cursors for next glyph (note that advance is number of 1/64 pixels)
+                x += (ch.Advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64 (divide amount of 1/64th pixels by 64 to get amount of pixels))
+            }
+            glBindVertexArray(0);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
         bool collisioncheck( Camera* camera,glm::vec3 cube, float deltaTime)
         {   //float camerabox[3]={camera->Position.x-1.0f, camera->Position.y-1.8f, camera->Position.z-0.5f};
         //     float cubebox[3]={cube.x-1.0f, cube.y-1.0f, cube.z-1.0f};
@@ -192,8 +257,8 @@ class Engine
         //     {
 
         //     }
-            float camerabottom[3]={camera->Position.x-0.5f, camera->Position.y-1.7f, camera->Position.z-0.5f};
-            float cameratop[3]={camera->Position.x+0.5f, camera->Position.y+0.1f, camera->Position.z+0.5f};
+            float camerabottom[3]={camera->Position.x-0.3f, camera->Position.y-1.7f, camera->Position.z-0.3f};
+            float cameratop[3]={camera->Position.x+0.3f, camera->Position.y+0.1f, camera->Position.z+0.3f};
             float cubetop[3]={cube.x+1.0f, cube.y+1.0f, cube.z+1.0f};
             if((((cameratop[0])>=cube.x)&&(camerabottom[0]<=cubetop[0]))&&(((cameratop[1])>=cube.y)&&(camerabottom[1]<=cubetop[1]))&&(((cameratop[2])>=cube.z)&&(camerabottom[2]<=cubetop[2])))
              {
@@ -240,8 +305,102 @@ class Engine
         void calculations(Camera* camera,float deltaTime)
         {
             (*camera).Position.y-=player.applygravity(deltaTime);
+            lookingAT(*camera);
+            //cout<<floor(camera->Position.x)<<" "<<floor(camera->Position.y)<<" "<<floor(camera->Position.z)<<endl;
+        }
+        void lookingAT(Camera camera)
+        {
+            vector<int> block;
+            block.push_back(static_cast<int>(floor(camera.Position.x)));
+            block.push_back(static_cast<int>(floor(camera.Position.y)));
+            block.push_back(static_cast<int>(floor(camera.Position.z)));
+            vector<int> step;
+            if(camera.Front.x>0)step.push_back(1);
+            else if(camera.Front.x<0)step.push_back(-1);
+            else step.push_back(0);
+            if(camera.Front.y>0)step.push_back(1);
+            else if(camera.Front.y<0)step.push_back(-1);
+            else step.push_back(0);
+            if(camera.Front.z>0)step.push_back(1);
+            else if(camera.Front.z<0)step.push_back(-1);
+            else step.push_back(0);
+            float tmaxx, tmaxy, tmaxz;
+            if(step[0]>0)tmaxx=(block[0]+1 - camera.Position.x)/camera.Front.x;
+            else if(step[0]<0)tmaxx=(block[0] - camera.Position.x)/camera.Front.x;
+            else tmaxx=INFINITY;
+            isinf(tmaxx);
+            if(step[1]>0)tmaxy=(block[1]+1 - camera.Position.y)/camera.Front.y;
+            else if(step[1]<0)tmaxy=(block[1] - camera.Position.y)/camera.Front.y;
+            else tmaxy=INFINITY;
+            if(step[2]>0)tmaxz=(block[2]+1 - camera.Position.z)/camera.Front.z;
+            else if(step[2]<0)tmaxz=(block[2] - camera.Position.z)/camera.Front.z;
+            else tmaxz=INFINITY;
+            float tdeltax, tdeltay, tdeltaz;
+            if(step[0]!=0)tdeltax=1.0f/abs(camera.Front.x);
+            else tdeltax=INFINITY;
+            if(step[1]!=0)tdeltay=1.0f/abs(camera.Front.y);
+            else tdeltay=INFINITY;
+            if(step[2]!=0)tdeltaz=1.0f/abs(camera.Front.z);
+            else tdeltaz=INFINITY;
+            
         }
     private:
+        void characterInit()
+        {
+            if (FT_Init_FreeType(&ft))
+            std::cout << "ERROR::FREETYPE: Could not init FreeType Library" <<
+            std::endl;
+            if (FT_New_Face(ft, "fonts/amiri-regular.ttf", 0, &face))
+            std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
+            FT_Set_Pixel_Sizes(face, 0, 48);
+            if (FT_Load_Char(face, 'X', FT_LOAD_RENDER))
+                std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // no byte-alignment restriction
+            // set size to load glyphs as
+
+            // load first 128 characters of ASCII set
+            for (unsigned char c = 0; c < 128; c++)
+            {
+                // Load character glyph 
+                if (FT_Load_Char(face, c, FT_LOAD_RENDER))
+                {
+                    std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
+                    continue;
+                }
+                // generate texture
+                unsigned int texture;
+                glGenTextures(1, &texture);
+                glBindTexture(GL_TEXTURE_2D, texture);
+                glTexImage2D(
+                    GL_TEXTURE_2D,
+                    0,
+                    GL_RED,
+                    face->glyph->bitmap.width,
+                    face->glyph->bitmap.rows,
+                    0,
+                    GL_RED,
+                    GL_UNSIGNED_BYTE,
+                    face->glyph->bitmap.buffer
+                );
+                // set texture options
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                // now store character for later use
+                Character character = {
+                    texture,
+                    glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
+                    glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
+                    static_cast<unsigned int>(face->glyph->advance.x)
+                };
+                Characters.insert(std::pair<char, Character>(c, character));
+            }
+            glBindTexture(GL_TEXTURE_2D, 0);
+            FT_Done_Face(face);
+            FT_Done_FreeType(ft);
+
+            }
 };
 
 unsigned int loadTexture(char const * path)

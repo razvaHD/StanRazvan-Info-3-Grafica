@@ -165,6 +165,7 @@ private:
         front.x = cos(glm::radians(Yaw)) * cos(glm::radians(Pitch));
         front.y = sin(glm::radians(Pitch));
         front.z = sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));
+        //std::cout<<front.x<<" "<<front.y<<" "<<front.z<<std::endl;
         Front = glm::normalize(front);
         front.x=1;
         front.y=0;
