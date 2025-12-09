@@ -10,7 +10,11 @@ enum Camera_Movement {
     FORWARD,
     BACKWARD,
     LEFT,
-    RIGHT
+    RIGHT,
+    FORWARDLEFT,
+    FORWARDRIGHT,
+    BACKWARDLEFT,
+    BACKWARDRIGHT,
 };
 
 // Default camera values
@@ -67,15 +71,57 @@ public:
     // processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
     void ProcessKeyboard(Camera_Movement direction, float deltaTime)
     {
+        glm::vec3 front = glm::normalize(glm::vec3(Front.x, 0.0f, Front.z));
+        glm::vec3 right =glm::normalize(glm::cross(Front, WorldUp));
         float velocity = MovementSpeed * deltaTime;
+        // if (direction == FORWARD)
+        //     Position += front * velocity;
+        // if (direction == BACKWARD)
+        //     Position -= front * velocity;
+        // if (direction == LEFT)
+        //     Position -= right * velocity;
+        // if (direction == RIGHT)
+        //     Position += right * velocity;
+        // float velocity = MovementSpeed * deltaTime;
         if (direction == FORWARD)
-            Position += Front * velocity;
+            Position += front* velocity;
         if (direction == BACKWARD)
-            Position -= Front * velocity;
+            Position -= front * velocity;
         if (direction == LEFT)
-            Position -= Right * velocity;
+            Position -= right * velocity;
         if (direction == RIGHT)
-            Position += Right * velocity;
+            Position += right * velocity;
+        if (direction == FORWARDLEFT)
+        {   glm::vec3 fronthalf=glm::vec3(front.x*0.75f,front.y*0.5f,front.z*0.75f);
+            glm::vec3 righthalf=glm::vec3(right.x*0.5f,right.y*0.5f,right.z*0.5f);
+            Position += fronthalf * velocity;
+            Position -= righthalf * velocity;
+        }
+        if (direction == FORWARDRIGHT)
+        {
+            glm::vec3 fronthalf=glm::vec3(front.x*0.7f,front.y*0.5f,front.z*0.7f);
+            glm::vec3 righthalf=glm::vec3(right.x*0.7f,right.y*0.5f,right.z*0.7f);
+            
+            Position += fronthalf * velocity;
+            Position += righthalf * velocity;
+        }
+        if (direction == BACKWARDLEFT)
+        {
+            glm::vec3 fronthalf=glm::vec3(front.x*0.7f,front.y*0.5f,front.z*0.7f);
+            glm::vec3 righthalf=glm::vec3(right.x*0.7f,right.y*0.5f,right.z*0.7f);
+            
+            Position -= fronthalf * velocity;
+            Position -= righthalf * velocity;
+        }
+        if (direction == BACKWARDRIGHT)
+        {
+            glm::vec3 fronthalf=glm::vec3(front.x*0.7f,front.y*0.5f,front.z*0.7f);
+            glm::vec3 righthalf=glm::vec3(right.x*0.7f,right.y*0.5f,right.z*0.7f);
+            
+            Position -= fronthalf * velocity;
+            Position += righthalf * velocity;
+        }
+        
     }
 
     // processes input received from a mouse input system. Expects the offset value in both the x and y direction.
@@ -104,10 +150,10 @@ public:
     void ProcessMouseScroll(float yoffset)
     {
         Zoom -= (float)yoffset;
-        if (Zoom < 0.5f)
-            Zoom = 0.5f;
-        if (Zoom > 500.0f)
-            Zoom = 500.0f;
+        if (Zoom < -50.5f)
+            Zoom = -50.5f;
+        if (Zoom > 100.0f)
+            Zoom = 100.0f;
     }
 
 private:
@@ -120,6 +166,9 @@ private:
         front.y = sin(glm::radians(Pitch));
         front.z = sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));
         Front = glm::normalize(front);
+        front.x=1;
+        front.y=0;
+        front.z=1;
         // also re-calculate the Right and Up vector
         Right = glm::normalize(glm::cross(Front, WorldUp));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
         Up    = glm::normalize(glm::cross(Right, Front));

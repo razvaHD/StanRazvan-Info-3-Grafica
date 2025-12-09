@@ -56,5 +56,6 @@
   "C_Cpp_Runner.showCompilationTime": false,
   "C_Cpp_Runner.useLinkTimeOptimization": false,
   "C_Cpp_Runner.msvcSecureNoWarnings": false,
-  "cmake.sourceDirectory": "/home/personal/documente/Facultate/Grafica/StanRăzvan-Info-3-Grafică/StanRazvan-Info-3-Grafica/glfw/glfw"
+  "cmake.sourceDirectory": "/home/personal/documente/Facultate/Grafica/StanRăzvan-Info-3-Grafică/StanRazvan-Info-3-Grafica/glfw/glfw",
+  "C_Cpp.errorSquiggles": "disabled"
 }
